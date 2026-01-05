@@ -142,7 +142,7 @@ class ModifyLibraryFile:
 
 
     def GetVariableNamesAndLineNumber(self):
-        var_dict = {'LineNumber': [], 'VariableName': []}
+        var_dict = {'LineNumber': [], 'VariableName': [], 'StartLineNumber': []}
         # function_name = None
         for node in ast.walk(self.tree):
             # if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
@@ -154,6 +154,7 @@ class ModifyLibraryFile:
                     if isinstance(target, ast.Name):
                         var_dict['LineNumber'].append(node.end_lineno)
                         var_dict['VariableName'].append(target.id)
+                        var_dict['StartLineNumber'].append(node.lineno)
                     elif isinstance(target, ast.Attribute) and isinstance(target.value, ast.Name):
                         if target.value.id == 'self':
                             s = f'self.{target.attr}'
@@ -161,16 +162,18 @@ class ModifyLibraryFile:
                             s = f'{target.value.id}.{target.attr}'
                         var_dict['LineNumber'].append(node.end_lineno)
                         var_dict['VariableName'].append(s)
+                        var_dict['StartLineNumber'].append(node.lineno)
                     elif isinstance(target, ast.Subscript):
                         # e[:, it % convergence_iter] = E
                         if isinstance(target.value, ast.Name):
                             var_dict['LineNumber'].append(node.end_lineno)
                             var_dict['VariableName'].append(target.value.id)
+                            var_dict['StartLineNumber'].append(node.lineno)
                         # S.flat[:: (n_samples + 1)] = preference
                         elif isinstance(target.value.value, ast.Name):
                             var_dict['LineNumber'].append(node.end_lineno)
                             var_dict['VariableName'].append(target.value.value.id)
-
+                            var_dict['StartLineNumber'].append(node.lineno)
                     # a, b = 5, 7
                     else:
                         try:
@@ -178,6 +181,7 @@ class ModifyLibraryFile:
                             for v in variable_names:
                                 var_dict['LineNumber'].append(node.end_lineno)
                                 var_dict['VariableName'].append(v)
+                                var_dict['StartLineNumber'].append(node.lineno)
                         except Exception as e:
                             print("Error in ", node.lineno, self.FilePath, "\nError:", e)
                             pass
@@ -185,10 +189,10 @@ class ModifyLibraryFile:
                 if isinstance(node.target, ast.Name):
                     var_dict['LineNumber'].append(node.end_lineno)
                     var_dict['VariableName'].append(node.target.id)
+                    var_dict['StartLineNumber'].append(node.lineno)
             
             
         self.VariableDF = pd.DataFrame(var_dict)
-        # print(self.VariableDF)
         
     def CreateNewFileWithDecorator(self):
         self.GetVariableNamesAndLineNumber()
@@ -199,17 +203,21 @@ class ModifyLibraryFile:
         OrginalFile = open(self.OriginalCodeTemporaryPath, 'r')
         OrginalFileLines = OrginalFile.readlines()
         OFLines = iter(OrginalFileLines)
-        
         lineCount = 0
+        spaces = ''
         for line in OFLines:
             self.NewFile.write(line)
             lineCount+=1
-            filtered_df = self.VariableDF[self.VariableDF["LineNumber"] == lineCount]
-            if filtered_df.shape[0] > 0:
+            if self.VariableDF[self.VariableDF["StartLineNumber"] == lineCount].shape[0] > 0:
                 num_spaces = len(line) - len(line.lstrip(' '))
                 spaces = ' ' * num_spaces
+            filtered_df = self.VariableDF[self.VariableDF["LineNumber"] == lineCount]
+            if filtered_df.shape[0] > 0:
+                # num_spaces = len(line) - len(line.lstrip(' '))
+                # spaces = ' ' * num_spaces
                 for index, row in filtered_df.iterrows():
                     self.add_decorator(spaces, "Global", row["VariableName"], row["LineNumber"])
+                spaces = ''
 
                 
     
