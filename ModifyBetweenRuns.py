@@ -5,7 +5,7 @@ import pandas as pd
 
 from ImportedModules import ImportedModules
 from ModifyLibraryFile import ModifyLibraryFile
-
+from GetLibraryPath import ResolveSourcePath
 
 
 def EditBeforeRun1(libFile):
@@ -103,10 +103,12 @@ if __name__ == "__main__":
             libFile = "/Users/muyeedahmed/Desktop/Gitcode/ForkedLibrary/scikit-learn/sklearn/tree/_classes.py"
         elif args[1] == "IF":
             libFile = "/Users/muyeedahmed/Desktop/Gitcode/ForkedLibrary/scikit-learn/sklearn/ensemble/_iforest.py"
+        else:
+            libFile = ResolveSourcePath(args[1])
     if libFile == "":
         print("Invalid source code directory")
         sys.exit()
-        
+    print("Modifying:", libFile)
     if args[2] == "R1":
         EditBeforeRun1(libFile)
     elif args[2] == "R2":
