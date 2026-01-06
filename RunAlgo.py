@@ -4,7 +4,7 @@ import itertools
 import numpy as np
 import sys
 
-TEST_INPUTS = [0, 1, -1, 1.5, None, "x", [1, 2, 3], np.array([1, 2, 3])]
+TEST_INPUTS = [0, 1, -1, 1.5, None, "x", [1, 2, 3, 4, 5], np.array([1, 2, 3, 4, 5])]
 
 def PositionalArity(fn):
     try:
@@ -47,14 +47,9 @@ def Probe(func_path, max_arity_if_unknown = 3):
                 return
             except Exception as e:
                 pass
-                # print(f"FAIL args={args} -> {type(e).__name__}: {e}")
 
     print(f"Failed to run {func_path} with any argument combination of arities {list(arities)}")
         
 if __name__ == "__main__":
-    # probe("numpy.bartlett")
-    # probe("scipy.stats.zscore")
-    # Probe("numpy.random.normal")
-    args = sys.argv
-    libFunction = args[1]
+    libFunction = sys.argv[1]
     Probe(libFunction)
