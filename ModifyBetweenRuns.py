@@ -64,7 +64,7 @@ def EditBeforeRun2(libFile):
         os.rename(newFilePath, p)
     
     
-def Reset(libFile):
+def Reset(libFile, libFunc):
     mlf = ModifyLibraryFile(FilePath=libFile)
     mlf.reset()
     im = ImportedModules(FilePath=libFile)
@@ -81,32 +81,20 @@ def Reset(libFile):
         mlf.reset()
         # except:
         #     print("Error in", p)
-    os.rename("TraceOutput/Trace.csv",  "TraceOutput/Trace_"+libFile.split("/")[-1].split(".")[0]+".csv")
+    traceFile = pd.read_csv("TraceOutput/Trace.csv", header=None)
+    if traceFile.shape[0]>1:
+        traceFile.columns = ["Variable","Filename","FilePath","LineNo","Iteration","Deterministic"]
+        traceFile.to_csv(f"TraceOutput/Trace_{libFunc}.csv", index=False)
+    os.remove("TraceOutput/Trace.csv")
 
 if __name__ == "__main__":
     libFile = ""
     args = sys.argv
-    if os.path.exists(args[1]):
-        libFile = args[1]
-    else:
-        if args[1] == "AP":
-            libFile = "/Users/muyeedahmed/Desktop/Gitcode/ForkedLibrary/scikit-learn/sklearn/cluster/_affinity_propagation.py"
-        elif args[1] == "SC":
-            libFile = "/Users/muyeedahmed/Desktop/Gitcode/ForkedLibrary/scikit-learn/sklearn/cluster/_spectral.py"
-        elif args[1] == "KM":
-            libFile = "/Users/muyeedahmed/Desktop/Gitcode/ForkedLibrary/scikit-learn/sklearn/cluster/_kmeans.py"
-        elif args[1] == "GM":
-            libFile = "/Users/muyeedahmed/Desktop/Gitcode/ForkedLibrary/scikit-learn/sklearn/mixture/_base.py"
-        elif args[1] == "LogReg":
-            libFile = "/Users/muyeedahmed/Desktop/Gitcode/ForkedLibrary/scikit-learn/sklearn/linear_model/_logistic.py"
-        elif args[1] == "DT":
-            libFile = "/Users/muyeedahmed/Desktop/Gitcode/ForkedLibrary/scikit-learn/sklearn/tree/_classes.py"
-        elif args[1] == "IF":
-            libFile = "/Users/muyeedahmed/Desktop/Gitcode/ForkedLibrary/scikit-learn/sklearn/ensemble/_iforest.py"
-        else:
-            libFile = ResolveSourcePath(args[1])
-    if libFile == "":
-        print("Invalid source code directory")
+    libFunc = args[1]
+    try:
+        libFile = ResolveSourcePath(libFunc)
+    except Exception as e:
+        print("Error:", e)
         sys.exit()
     print("Modifying:", libFile)
     if args[2] == "R1":
@@ -114,7 +102,7 @@ if __name__ == "__main__":
     elif args[2] == "R2":
         EditBeforeRun2(libFile)
     elif args[2] == "Reset":
-        Reset(libFile)
+        Reset(libFile, libFunc)
     
         
     
